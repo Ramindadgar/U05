@@ -14,15 +14,13 @@ def test_stores():
     
 
 def test_store_address():
-    response = client.get("/stores/Djurjouren")
+    response = client.get("/stores/Djuristen")
     assert response.status_code == 200
     assert response.json() == {
-  "data": [
-    {
-      "name": "Djurjouren",
-      "address": "Upplandsgatan 99"
-    }
-  ]
+  "data": {
+    "name": "Djuristen",
+    "address": "Skånegatan 420, 54321 Falun"
+  }
 }
 
 
@@ -32,15 +30,21 @@ def test_store_address_non_existing():
 
 
 def test_city_name():
-    response = client.get("/city/Stockholm")
+    response = client.get("/city")
     assert response.status_code == 200
     assert response.json() == {
   "data": [
-    {
-      "city": "Stockholm"
-    }
+    "Falun",
+    "Gävle",
+    "Stockholm",
+    "Hudiksvall"
   ]
 }
+#     assert response.json() == {
+#   "data": [
+#     "Stockholm"
+#   ]
+# }
 
 
 def test_city_name_non_existing():
