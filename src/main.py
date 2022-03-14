@@ -70,7 +70,7 @@ async def get_city(zip=None):
         data = cur.fetchall()
 
         if len(data) == 0:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No stores was found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No city was found")
 
         data = [d["city"] for d in data]
         return {"data": data}
