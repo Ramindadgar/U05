@@ -51,11 +51,12 @@ async def read_item(name: str):
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute("SELECT stores.name, store_addresses.address, store_addresses.zip, store_addresses.city FROM stores JOIN store_addresses on store = stores.id WHERE name=(%s)", (name,))
         data = cur.fetchone()
-        data = {"name": data["name"], "address": f"{data['address']}, {data['zip']} {data['city']}"}
 
-        if data :
+        if not data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No stores was found") # pg_dump -h dev.kjeld.io -U bb -d breakingbad | less > pipe to folder
-            
+        else:
+            data = {"name": data["name"], "address": f"{data['address']}, {data['zip']} {data['city']}"}
+
         return {"data": data}
 
 

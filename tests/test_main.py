@@ -40,11 +40,16 @@ def test_city_name():
     "Hudiksvall"
   ]
 }
-#     assert response.json() == {
-#   "data": [
-#     "Stockholm"
-#   ]
-# }
+
+
+def test_get_one_city():
+    response = client.get("/city?zip=12345")
+    assert response.status_code == 200
+    assert response.json() == {
+  "data": [
+    "Stockholm"
+  ]
+}
 
 
 def test_city_name_non_existing():
