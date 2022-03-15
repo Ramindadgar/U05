@@ -94,4 +94,4 @@ async def sales():
 #         # stores = [{"name": s["name"], "address": f"{s['address']}, {s['zip']} {s['city']}"} for s in stores]
 
 #         return {"data": sales}
-#pg_dump -h dev.kjeld.io -U bb -d breakingbad | less > pipe to folder
+# pg_dump -h dev.kjeld.io -U bb -d breakingbad | less > pipe to folder
