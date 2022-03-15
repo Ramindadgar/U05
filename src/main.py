@@ -23,7 +23,6 @@ def root():
 
 # Test codes:
 # lt = [('Geeks', 2), ('For', 4), ('geek', '6')]
-  
 # # using list comprehension
 # out = [item for t in lt for item in t]
 
@@ -53,7 +52,7 @@ async def read_item(name: str):
         data = cur.fetchone()
 
         if not data:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No stores was found")#pg_dump -h dev.kjeld.io -U bb -d breakingbad | less > pipe to folder
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No stores was found")
         else:
             data = {"name": data["name"], "address": f"{data['address']}, {data['zip']} {data['city']}"}
 
@@ -95,3 +94,4 @@ async def sales():
 #         # stores = [{"name": s["name"], "address": f"{s['address']}, {s['zip']} {s['city']}"} for s in stores]
 
 #         return {"data": sales}
+#pg_dump -h dev.kjeld.io -U bb -d breakingbad | less > pipe to folder
