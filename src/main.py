@@ -1,12 +1,13 @@
 from fastapi import FastAPI, HTTPException, status
+
 import psycopg2
 import psycopg2.extras
-from pyparsing import empty
 
 app = FastAPI()
 
 
-conn = psycopg2.connect("postgresql://test-breakingbad:testpass@db:5432/bbdb")
+# conn = psycopg2.connect("postgresql://test-breakingbad:testpass@db:5432/bbdb")
+conn = psycopg2.connect("postgresql://postgres:DjExUSMcwWpzXziT@doe21-db.grinton.dev:5432/u05")
 # conn = psycopg2.connect("postgresql://postgres:testpass@db:5432/bbdb")
 # cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
@@ -23,7 +24,7 @@ def root():
 
 # Test codes:
 # lt = [('Geeks', 2), ('For', 4), ('geek', '6')]
-  
+
 # # using list comprehension
 # out = [item for t in lt for item in t]
 
@@ -53,7 +54,7 @@ async def read_item(name: str):
         data = cur.fetchone()
 
         if not data:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No stores was found") # pg_dump -h dev.kjeld.io -U bb -d breakingbad | less > pipe to folder
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No stores was found") #pg_dump -h dev.kjeld.io -U bb -d breakingbad | less > pipe to folder
         else:
             data = {"name": data["name"], "address": f"{data['address']}, {data['zip']} {data['city']}"}
 
@@ -86,12 +87,12 @@ async def sales():
         return {"data": sales}
 
 
-# @app.get("/sales/{sale_id}")
-# async def sales(sale_id: str):
-#     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-#         cur.execute("SELECT stores.name, sales.time, sales.id, sold_products.quantity, products.name FROM sales JOIN stores on stores.id = store WHERE id = (%s) JOIN sold_products on sold_products.sale = id, JOIN products on products.id = sold_products.product", (sale_id,))
-#         sales = cur.fetchall()
-#         sales = [{"store": s["name"], "timestamp": s['time'], "sale_id": s['id'], "Products": f"{s['name']}, {s['qty']}"} for s in sales]
-#         # stores = [{"name": s["name"], "address": f"{s['address']}, {s['zip']} {s['city']}"} for s in stores]
+@app.get("/sales/{sale_id}")
+async def sales(sale_id: str):
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("SELECT stores.name, sales.time, sales.id, sold_products.quantity, products.name FROM sales JOIN stores on stores.id = sales.store WHERE id = (%s) JOIN sold_products on sold_products.sale = sales.id JOIN products on products.id = sold_products.product", (sale_id,))
+        sales = cur.fetchall()
+        sales = [{"store": s["name"], "timestamp": s['time'], "sale_id": s['id'], "Products": f"{s['name']}, {s['qty']}"} for s in sales]
+        # stores = [{"name": s["name"], "address": f"{s['address']}, {s['zip']} {s['city']}"} for s in stores]
 
-#         return {"data": sales}
+        return {"data": sales}
