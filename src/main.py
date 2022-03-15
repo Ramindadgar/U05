@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException, status
+
 import psycopg2
 import psycopg2.extras
-from pyparsing import empty
+
 
 app = FastAPI()
 
