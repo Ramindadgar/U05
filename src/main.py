@@ -53,7 +53,7 @@ async def read_item(name: str):
         data = cur.fetchone()
 
         if not data:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No stores was found") # pg_dump -h dev.kjeld.io -U bb -d breakingbad | less > pipe to folder
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No stores was found")#pg_dump -h dev.kjeld.io -U bb -d breakingbad | less > pipe to folder
         else:
             data = {"name": data["name"], "address": f"{data['address']}, {data['zip']} {data['city']}"}
 
