@@ -9,7 +9,7 @@ app = FastAPI()
 conn = psycopg2.connect("postgresql://postgres:DjExUSMcwWpzXziT@doe21-db.grinton.dev:5432/u05")
 
 
-#conn = psycopg2.connect("postgresql://test-breakingbad:testpass@db:5432/bbdb")
+# conn = psycopg2.connect("postgresql://test-breakingbad:testpass@db:5432/bbdb")
 # conn = psycopg2.connect("postgresql://postgres:testpass@db:5432/bbdb")
 # cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
