@@ -4,6 +4,7 @@ from pytest import raises
 import os
 import psycopg2
 from fastapi import FastAPI
+from src.main import app
 
 #app = FastAPI()
 
