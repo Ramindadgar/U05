@@ -5,7 +5,7 @@ variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 # cache
 cache:
-  path:
+  paths:
     - .cache/pip
     - venv/
 # Stages
