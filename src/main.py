@@ -74,3 +74,24 @@ async def get_city(zip=None):
 
         data = [d["city"] for d in data]
         return {"data": data}
+
+
+@app.get("/sales")
+async def sales():
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("SELECT name, sales.time, sales.id FROM stores JOIN sales on store = stores.id")
+        sales = cur.fetchall()
+        sales = [{"store": s["name"], "timestamp": s['time'], "sale_id": s['id']} for s in sales]
+
+        return {"data": sales}
+
+
+# @app.get("/sales/{sale_id}")
+# async def sales(sale_id: str):
+#     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+#         cur.execute("SELECT stores.name, sales.time, sales.id, sold_products.quantity, products.name FROM sales JOIN stores on stores.id = store WHERE id = (%s) JOIN sold_products on sold_products.sale = id, JOIN products on products.id = sold_products.product", (sale_id,))
+#         sales = cur.fetchall()
+#         sales = [{"store": s["name"], "timestamp": s['time'], "sale_id": s['id'], "Products": f"{s['name']}, {s['qty']}"} for s in sales]
+#         # stores = [{"name": s["name"], "address": f"{s['address']}, {s['zip']} {s['city']}"} for s in stores]
+
+#         return {"data": sales}

@@ -1,0 +1,62 @@
+# image
+image: python:3.9
+# global variable
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+# cache
+cache:
+  - .cache/pip
+  - venv/
+# Stages
+stages:
+  - code_quality
+  - testing
+  - build
+# Jobs
+"Test code compliant to PEP8 and Lint and imports to flake8":
+stage: code_quality
+before_script:
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+  - pip install -r requirements.txt
+script:
+  - pycodestyle src/*.py
+  - flake8 src/*.py
+# PEP8 samt kolla alla imports är i rätt ordning med t.ex flake8 flake8-import-order
+# - Installera venv
+# - Installera requirements
+# - Aktivera venv
+# - PEP8
+# - flake8
+# - flake8-import-order
+
+# Run unit tests using Pytest. Runs all tests in our test_main.py-file
+"Unit testing":
+stage: testing
+before_script:
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+  - pip install -r requirements.txt
+script:
+  - pytest tests/ --verbose
+# - Installera venv
+# - Installera requirements
+# - Aktivera venv
+# - Låta Pytest köra våra tester i test_main.py
+
+"Build and deploy docker-compose image":
+image: docker:20.10.12
+stage: build
+services:
+  - docker:dind
+script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG -t $CI_REGISTRY_IMAGE:latest -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE:latest
+# - Här måste vi ange en annan image än den vi angett i början eftersom det är en ett "docker-jobb"
+# - Ange en "service" eftersom vi kör en dockerfile som "grund" så blir det som en "Docker-in-docker"
+# - Sedan ange "script" docker login, build and push (Finns redan variabler man bör använda)
