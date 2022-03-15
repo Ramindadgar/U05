@@ -14,7 +14,8 @@ stages:
   - testing
   - build
 # Jobs
-"Test code compliant to PEP8 and Lint and imports to flake8":
+# Test code compliant to PEP8 and Lint and imports to flake8
+"testing code quality":
 stage: code_quality
 before_script:
   - pip install virtualenv
@@ -47,7 +48,7 @@ script:
 # - Aktivera venv
 # - Låta Pytest köra våra tester i test_main.py
 
-"Build and deploy docker-compose image":
+"Build/push docker image":
 image: docker:20.10.12
 stage: build
 services:
