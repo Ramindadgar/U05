@@ -5,8 +5,9 @@ variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 # cache
 cache:
-  - .cache/pip
-  - venv/
+  path:
+    - .cache/pip
+    - venv/
 # Stages
 stages:
   - code_quality
