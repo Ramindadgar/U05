@@ -12,8 +12,8 @@ from src.main import app
 client = TestClient(app)
 
 
-# To runt pytest: docker-compose exec web pytest . -v
-# -v (verbose, to get more info)
+#To runt pytest: docker-compose exec web pytest . -v
+#-v (verbose, to get more info)
 
 
 def test_stores():    

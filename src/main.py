@@ -1,14 +1,15 @@
 from fastapi import FastAPI, HTTPException, status
 
+import uuid
+
 import psycopg2
 import psycopg2.extras
 
 app = FastAPI()
 
+conn = psycopg2.connect("postgresql://postgres:DjExUSMcwWpzXziT@doe21-db.grinton.dev:5432/u05")
 
 # conn = psycopg2.connect("postgresql://test-breakingbad:testpass@db:5432/bbdb")
-conn = psycopg2.connect("postgresql://postgres:DjExUSMcwWpzXziT@doe21-db.grinton.dev:5432/u05")
-# conn = psycopg2.connect("postgresql://postgres:testpass@db:5432/bbdb")
 # cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
 
@@ -24,10 +25,9 @@ def root():
 
 # Test codes:
 # lt = [('Geeks', 2), ('For', 4), ('geek', '6')]
-
 # # using list comprehension
 # out = [item for t in lt for item in t]
-
+# pg_dump -h dev.kjeld.io -U bb -d breakingbad | less > pipe to folder
 # "SELECT name, string_agg(address || '' || zip || '' ||city, '')  FROM stores JOIN store_addresses on store = stores.id group by name"
 # Docker image prune
 
@@ -54,7 +54,7 @@ async def read_item(name: str):
         data = cur.fetchone()
 
         if not data:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No stores was found") #pg_dump -h dev.kjeld.io -U bb -d breakingbad | less > pipe to folder
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No stores was found")
         else:
             data = {"name": data["name"], "address": f"{data['address']}, {data['zip']} {data['city']}"}
 
@@ -90,9 +90,24 @@ async def sales():
 @app.get("/sales/{sale_id}")
 async def sales(sale_id: str):
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute("SELECT stores.name, sales.time, sales.id, sold_products.quantity, products.name FROM sales JOIN stores on stores.id = sales.store WHERE id = (%s) JOIN sold_products on sold_products.sale = sales.id JOIN products on products.id = sold_products.product", (sale_id,))
-        sales = cur.fetchall()
-        sales = [{"store": s["name"], "timestamp": s['time'], "sale_id": s['id'], "Products": f"{s['name']}, {s['qty']}"} for s in sales]
-        # stores = [{"name": s["name"], "address": f"{s['address']}, {s['zip']} {s['city']}"} for s in stores]
+        
+        valid_uuid = is_valid_uuid(sale_id)
+        if valid_uuid == False:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid entry")
 
-        return {"data": sales}
+        cur.execute("SELECT stores.name, sales.time, sales.id FROM sales JOIN stores on stores.id = sales.store WHERE sales.id = (%s)", (sale_id,))
+        sales = cur.fetchone()
+        cur.execute("SELECT sold_products.quantity, products.name FROM sold_products JOIN products ON products.id = sold_products.product WHERE sold_products.sale = (%s)", (sale_id,))
+        product = cur.fetchone()
+        p = {"Name": product['name'], "Qty": product['quantity']}
+        result = {"store": sales["name"], "timestamp": sales['time'], "sale_id": sales['id'], "Products": [p]}
+            
+        return {"data": result}
+
+
+def is_valid_uuid(val):
+    try:
+        uuid.UUID(str(val))
+        return True
+    except ValueError:
+        return False
