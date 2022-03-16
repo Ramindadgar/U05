@@ -1,6 +1,6 @@
-from fastapi import FastAPI, HTTPException, status
-
 import uuid
+
+from fastapi import FastAPI, HTTPException, status
 
 import psycopg2
 import psycopg2.extras
@@ -88,7 +88,7 @@ async def sales():
 
 
 @app.get("/sales/{sale_id}")
-async def sales(sale_id: str):
+async def get_sale(sale_id: str):
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
 
         valid_uuid = is_valid_uuid(sale_id)
