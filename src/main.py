@@ -92,7 +92,7 @@ async def sales(sale_id: str):
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
 
         valid_uuid = is_valid_uuid(sale_id)
-        if valid_uuid == False:
+        if valid_uuid is False:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid entry")
 
         cur.execute("SELECT id FROM sales")
@@ -104,7 +104,7 @@ async def sales(sale_id: str):
             cur.execute("SELECT sold_products.quantity, products.name FROM sold_products JOIN products ON products.id = sold_products.product WHERE sold_products.sale = (%s)", (sale_id,))
             product = cur.fetchone()
             p = {"Name": product['name'], "Qty": product['quantity']}
-            result = {"store": sales["name"], "timestamp": sales['time'], "sale_id": sales['id'], "Products": [p]} 
+            result = {"store": sales["name"], "timestamp": sales['time'], "sale_id": sales['id'], "Products": [p]}
             return {"data": result}
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ID does not exist")
