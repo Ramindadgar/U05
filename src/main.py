@@ -89,20 +89,25 @@ async def sales():
 
 @app.get("/sales/{sale_id}")
 async def sales(sale_id: str):
-    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+
         valid_uuid = is_valid_uuid(sale_id)
         if valid_uuid == False:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid entry")
 
-        cur.execute("SELECT stores.name, sales.time, sales.id FROM sales JOIN stores on stores.id = sales.store WHERE sales.id = (%s)", (sale_id,))
-        sales = cur.fetchone()
-        cur.execute("SELECT sold_products.quantity, products.name FROM sold_products JOIN products ON products.id = sold_products.product WHERE sold_products.sale = (%s)", (sale_id,))
-        product = cur.fetchone()
-        p = {"Name": product['name'], "Qty": product['quantity']}
-        result = {"store": sales["name"], "timestamp": sales['time'], "sale_id": sales['id'], "Products": [p]}
-            
-        return {"data": result}
+        cur.execute("SELECT id FROM sales")
+        id = cur.fetchall()
+        sale_UUID = [item for t in id for item in t]
+        if sale_id in sale_UUID:
+            cur.execute("SELECT stores.name, sales.time, sales.id FROM sales JOIN stores on stores.id = sales.store WHERE sales.id = (%s)", (sale_id,))
+            sales = cur.fetchone()
+            cur.execute("SELECT sold_products.quantity, products.name FROM sold_products JOIN products ON products.id = sold_products.product WHERE sold_products.sale = (%s)", (sale_id,))
+            product = cur.fetchone()
+            p = {"Name": product['name'], "Qty": product['quantity']}
+            result = {"store": sales["name"], "timestamp": sales['time'], "sale_id": sales['id'], "Products": [p]} 
+            return {"data": result}
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ID does not exist")
 
 
 def is_valid_uuid(val):
