@@ -95,6 +95,68 @@ def test_city_name_non_existing():
 }
 
 
+def test_sales():    
+    response = client.get("/sales")
+    assert response.status_code == 200
+    assert response.json() == {
+  "data": [
+    {
+      "store": "Den Stora Djurbutiken",
+      "timestamp": "2022-01-25T13:52:34",
+      "sale_id": "0188146f-5360-408b-a7c5-3414077ceb59"
+    },
+    {
+      "store": "Djuristen",
+      "timestamp": "2022-01-26T15:24:45",
+      "sale_id": "726ac398-209d-49df-ab6a-682b7af8abfb"
+    },
+    {
+      "store": "Den Lilla Djurbutiken",
+      "timestamp": "2022-02-07T09:00:56",
+      "sale_id": "602fbf9d-2b4a-4de2-b108-3be3afa372ae"
+    },
+    {
+      "store": "Den Stora Djurbutiken",
+      "timestamp": "2022-02-27T12:32:46",
+      "sale_id": "51071ca1-0179-4e67-8258-89e34b205a1e"
+    }
+  ]
+}
+
+
+def test_specific_sale():
+    response = client.get("/sales/0188146f-5360-408b-a7c5-3414077ceb59")
+    assert response.status_code == 200
+    assert response.json() == {
+  "data": {
+    "store": "Den Stora Djurbutiken",
+    "timestamp": "2022-01-25T13:52:34",
+    "sale_id": "0188146f-5360-408b-a7c5-3414077ceb59",
+    "Products": [
+      {
+        "Name": "Hundmat",
+        "Qty": 3
+      }
+    ]
+  }
+}
+
+
+def test_specific_sale_not_valid_entry():
+    response = client.get("/sales/d546dfs6d54sdf65s4df6s5d4f654e")
+    assert response.status_code == 422
+    assert response.json() == {
+  "detail": "Invalid entry"
+}
+
+
+def test_specific_sale_not_exist():
+    response = client.get("/sales/0188146f-5360-408b-a7c5-3414077ceb80")
+    assert response.status_code == 404
+    assert response.json() == {
+  "detail": "ID does not exist"
+}
+
 # class MockResponse:
 #     reason = "Mock reason"
 
