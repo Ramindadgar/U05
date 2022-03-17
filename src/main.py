@@ -5,12 +5,27 @@ from fastapi import FastAPI, HTTPException, status
 import psycopg2
 import psycopg2.extras
 
+
+"""
+Welcome to breaking bad endpoints.
+When testing these endpoints we have two different databases.
+One in a docker-compose container and one public "physical" database.
+If you are going to run tests with pytest against the docker-compose databse yo'll have to do this:
+1. in tests ==> test_main.py change the import "from src.main import app" to "from ..src.main import app"
+2. In src/main.py comment the public db connection and make sure the local db conneciton is uncomment.
+3. start docker-compose up -d ==> docker-compose exec web pytest . -v
+
+When running tests against the public database 
+1. comment away the local databse-connection below and
+2. In tests ==> test_main.py make sure the app-import looks like this: "from src.main import app"
+"""
+
+
 app = FastAPI()
 
 conn = psycopg2.connect("postgresql://postgres:DjExUSMcwWpzXziT@doe21-db.grinton.dev:5432/u05")
 
 # conn = psycopg2.connect("postgresql://test-breakingbad:testpass@db:5432/bbdb")
-# cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
 
 @app.on_event("shutdown")
@@ -21,20 +36,6 @@ def shutdown():
 @app.get("/")
 def root():
     return("WELCOME TO BRAKING BAD")
-
-
-# Test codes:
-# lt = [('Geeks', 2), ('For', 4), ('geek', '6')]
-# # using list comprehension
-# out = [item for t in lt for item in t]
-# pg_dump -h dev.kjeld.io -U bb -d breakingbad | less > pipe to folder
-# "SELECT name, string_agg(address || '' || zip || '' ||city, '')  FROM stores JOIN store_addresses on store = stores.id group by name"
-# Docker image prune
-
-# Imports for schema.py:
-# from typing import Optional
-# from typing import List
-# from . import schema
 
 
 @app.get("/stores")

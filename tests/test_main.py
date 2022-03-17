@@ -43,7 +43,7 @@ def test_stores():
     }
   ]
 }
-    
+
 
 def test_store_address():
     response = client.get("/stores/Djuristen")
