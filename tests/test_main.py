@@ -88,10 +88,10 @@ def test_get_one_city():
 
 
 def test_city_name_non_existing():
-    response = client.get("/city/55555555")
+    response = client.get("/city?zip=5555555")
     assert response.status_code == 404
     assert response.json() == {
-  'detail': 'Not Found'
+  "detail": "No city was found"
 }
 
 
@@ -132,10 +132,10 @@ def test_specific_sale():
     "store": "Den Stora Djurbutiken",
     "timestamp": "2022-01-25T13:52:34",
     "sale_id": "0188146f-5360-408b-a7c5-3414077ceb59",
-    "Products": [
+    "products": [
       {
-        "Name": "Hundmat",
-        "Qty": 3
+        "name": "Hundmat",
+        "qty": 3
       }
     ]
   }

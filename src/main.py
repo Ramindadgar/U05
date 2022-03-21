@@ -9,8 +9,11 @@ import psycopg2.extras
 """
 Welcome to breaking bad endpoints.
 When testing these endpoints we have two different databases.
+
 One in a docker-compose container and one public "physical" database.
+
 If you are going to run tests with pytest against the docker-compose databse yo'll have to do this:
+
 1. in tests ==> test_main.py change the import "from src.main import app" to "from ..src.main import app"
 2. In src/main.py comment the public db connection and make sure the local db conneciton is uncomment.
 3. start docker-compose up -d ==> docker-compose exec web pytest . -v
@@ -104,8 +107,8 @@ async def get_sale(sale_id: str):
             sales = cur.fetchone()
             cur.execute("SELECT sold_products.quantity, products.name FROM sold_products JOIN products ON products.id = sold_products.product WHERE sold_products.sale = (%s)", (sale_id,))
             product = cur.fetchone()
-            p = {"Name": product['name'], "Qty": product['quantity']}
-            result = {"store": sales["name"], "timestamp": sales['time'], "sale_id": sales['id'], "Products": [p]}
+            p = {"name": product['name'], "qty": product['quantity']}
+            result = {"store": sales["name"], "timestamp": sales['time'], "sale_id": sales['id'], "products": [p]}
             return {"data": result}
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ID does not exist")
