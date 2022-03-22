@@ -1,10 +1,13 @@
 import uuid
+from collections import namedtuple
+from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Query, status
 
 import psycopg2
 import psycopg2.extras
 
+# from src import api
 
 """
 Welcome to breaking bad endpoints.
@@ -12,7 +15,7 @@ When testing these endpoints we have two different databases.
 
 One in a docker-compose container and one public "physical" database.
 
-If you are going to run tests with pytest against the docker-compose databse yo'll have to do this:
+If you are going to run tests with pytest against the docker-compose databse you'll have to do this:
 
 1. in tests ==> test_main.py change the import "from src.main import app" to "from ..src.main import app"
 2. In src/main.py comment the public db connection and make sure the local db conneciton is uncomment.
@@ -38,7 +41,7 @@ def shutdown():
 
 @app.get("/")
 def root():
-    return("WELCOME TO BRAKING BAD")
+    return("WELCOME TO BREAKING BAD")
 
 
 @app.get("/stores")
@@ -120,3 +123,150 @@ def is_valid_uuid(val):
         return True
     except ValueError:
         return False
+
+
+QueryResultIncome = namedtuple("QueryResultIncome",
+                               ("store_name", "product_name", "price",
+                                "quantity", "sale_time", "discount"))
+
+
+@app.get("/income")
+def get_income(store: Optional[List[str]] = Query(None),
+               product: Optional[List[str]] = Query(None),
+               from_=Query(None, alias="from"), to_=Query(None, alias="to")):
+    """GET /income
+
+    Returns data in the usual format {"data": ·list-of-dicts}. Each
+    dictionary contains all info about a transaction, including price and
+    discount percent.
+
+    It accepts the following query parameters:
+        - store: (can be given more than once) UUID to filter results by store
+        - product: (can be given more than once) UUID to filter results by
+          product
+        - from: filter out all transactions before the given datestamp/timestamp
+        - to: filter out all transactions after the given datestamp/timestamp
+
+    If any invalid UUID is given (either in store or product), 422 -
+    Unprocessable Entity will be returned
+    """
+    stores_clause, products_clause, from_clause, to_clause = "", "", "", ""
+    parameters = []
+    if store:
+        try:
+            for iterator in store:
+                uuid.UUID(iterator)
+        except ValueError as err:
+            raise HTTPException(status_code=422,
+                                detail="Invalid UUID given for store!") from err
+        stores_clause = "WHERE stores.id = ANY(%s)"
+        parameters.append(store)
+    if product:
+        try:
+            for iterator in product:
+                uuid.UUID(iterator)
+        except ValueError as err:
+            raise HTTPException(
+                status_code=422,
+                detail="Invalid UUID given for product!") from err
+        products_clause = "WHERE products.id = ANY(%s)"
+        if parameters:
+            products_clause = products_clause.replace("WHERE", "AND")
+        parameters.append(product)
+    if from_:
+        from_clause = "WHERE sales.time >= %s"
+        if parameters:
+            from_clause = from_clause.replace("WHERE", "AND")
+        parameters.append(from_)
+    if to_:
+        to_clause = "WHERE sales.time <= %s"
+        if parameters:
+            to_clause = to_clause.replace("WHERE", "AND")
+        parameters.append(to_)
+    query = """SELECT stores.name, products.name, prices.price,
+               sold_products.quantity, sales.time, discounts.discount_percent
+               FROM sold_products
+               JOIN products on sold_products.product = products.id 
+               JOIN sales ON sold_products.sale = sales.id 
+               JOIN stores ON sales.store = stores.id 
+               JOIN prices ON products.id = prices.product
+               LEFT JOIN discounts ON products.id = discounts.product
+               {stores} {products} {from_} {to}
+               ORDER BY sales.time;"""
+               # WHERE stores.id = 'dd4cf820-f946-4f38-8492-ca5dfeed0d74' OR products.id = 'a37c34ae-0895-484a-8b2a-355aea3b6c44' OR sales.time >= '2022-01-25 13:52:34' OR sales.time <= '2022-02-27 12:32:46'
+    query = query.format(stores=stores_clause, products=products_clause,
+                         from_=from_clause, to=to_clause)
+    print(store)
+    print(product)
+    print(from_)
+    print(to_)
+    print(query)
+    with conn.cursor() as cur:
+        cur.execute(query, parameters)
+        result = cur.fetchall()
+    entries = [QueryResultIncome(*r)._asdict() for r in result]
+    return {"data": entries}
+
+
+# QueryResultInventory is a named tuple used to ease the parsing of
+# list-of-lists data format returned by cursor.fetchall into dictionaries
+# ready to be returned as JSON.
+QueryResultInventory = namedtuple("QueryResultInventory", ("product_name",
+                                                           "adjusted_quantity",
+                                                           "store_name"))
+
+@app.get("/inventory")
+def get_inventory(store=None, product=None):
+    """GET /inventory
+
+    Returns data in the usual format {"data": ·list-of-dicts}. Each
+    dictionary contains all info about *current* inventory (inventory -
+    sales) showing inventory status per product and store.
+
+    It accepts the following query parameters:
+        - store: UUID to filter results by store
+        - product: UUID to filter results by product
+
+    If any invalid UUID is given (either in store or product), 422 -
+    Unprocessable Entity will be returned
+
+    """
+    store_clause, product_clause = "", ""
+    parameters = []
+    if store:
+        try:
+            uuid.UUID(store)
+        except ValueError as err:
+            raise HTTPException(status_code=422,
+                                detail="Invalid UUID for product!") from err
+        store_clause = "WHERE stores.id = %s"
+        parameters.append(store)
+    if product:
+        try:
+            uuid.UUID(product)
+        except ValueError as err:
+            raise HTTPException(status_code=422,
+                                detail="Invalid UUID for store!") from err
+        product_clause = "WHERE products.id = %s"
+        if parameters:
+            product_clause = product_clause.replace("WHERE", "AND")
+        parameters.append(product)
+    query = """SELECT products.name,
+               SUM(inventory.quantity) + SUM(sold_products.quantity),
+               stores.name
+               FROM inventory
+               JOIN products ON products.id = inventory.product
+               JOIN stores ON stores.id = inventory.store
+               JOIN sold_products ON sold_products.product = products.id
+               {store} {product}
+               GROUP BY stores.name, products.name;
+    """
+    query = query.format(store=store_clause, product=product_clause)
+    print(store)
+    print(product)
+    print(query)
+    with conn.cursor() as cur:
+        cur.execute(query, parameters)
+        result = cur.fetchall()
+    entries = [QueryResultInventory(*r)._asdict() for r in result]
+    return sorted(entries, key=lambda x: (x["store_name"], x["product_name"]))
