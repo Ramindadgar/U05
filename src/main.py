@@ -242,7 +242,7 @@ def get_inventory(store=None, product=None):
             uuid.UUID(store)
         except ValueError as err:
             raise HTTPException(status_code=422,
-                                detail="Invalid UUID for product!") from err
+                                detail="Invalid UUID for store!") from err
         store_clause = "WHERE stores.id = %s"
         parameters.append(store)
     if product:
@@ -250,7 +250,7 @@ def get_inventory(store=None, product=None):
             uuid.UUID(product)
         except ValueError as err:
             raise HTTPException(status_code=422,
-                                detail="Invalid UUID for store!") from err
+                                detail="Invalid UUID for product!") from err
         product_clause = "WHERE products.id = %s"
         if parameters:
             product_clause = product_clause.replace("WHERE", "AND")
