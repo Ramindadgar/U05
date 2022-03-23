@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException, Query, status
 
 import psycopg2
 import psycopg2.extras
+import psycopg
 
 # from src import api
 
@@ -125,6 +126,9 @@ def is_valid_uuid(val):
         return False
 
 
+# QueryResultIncome is a named tuple used to ease the parsing of
+# list-of-lists data format returned by cursor.fetchall into dictionaries
+# ready to be returned as JSON.
 QueryResultIncome = namedtuple("QueryResultIncome",
                                ("store_name", "product_name", "price",
                                 "quantity", "sale_time", "discount"))
@@ -185,7 +189,7 @@ def get_income(store: Optional[List[str]] = Query(None),
         parameters.append(to_)
     query = """SELECT stores.name, products.name, prices.price,
                sold_products.quantity, sales.time, discounts.discount_percent
-               FROM sold_products
+               FROM sold_products 
                JOIN products on sold_products.product = products.id 
                JOIN sales ON sold_products.sale = sales.id 
                JOIN stores ON sales.store = stores.id 
@@ -193,21 +197,21 @@ def get_income(store: Optional[List[str]] = Query(None),
                LEFT JOIN discounts ON products.id = discounts.product
                {stores} {products} {from_} {to}
                ORDER BY sales.time;"""
-               # WHERE stores.id = 'dd4cf820-f946-4f38-8492-ca5dfeed0d74' OR products.id = 'a37c34ae-0895-484a-8b2a-355aea3b6c44' OR sales.time >= '2022-01-25 13:52:34' OR sales.time <= '2022-02-27 12:32:46'
     query = query.format(stores=stores_clause, products=products_clause,
                          from_=from_clause, to=to_clause)
-    print(store)
-    print(product)
-    print(from_)
-    print(to_)
-    print(query)
-    with conn.cursor() as cur:
-        cur.execute(query, parameters)
-        result = cur.fetchall()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(query, parameters)
+            result = cur.fetchall()
+    except psycopg.errors.Error:
+        conn.rollback()
+        raise HTTPException(status_code=422, detail="Invalid datetime format!")
     entries = [QueryResultIncome(*r)._asdict() for r in result]
+    print(entries)
     return {"data": entries}
 
 
+# WHERE stores.id = 'dd4cf820-f946-4f38-8492-ca5dfeed0d74' OR products.id = 'a37c34ae-0895-484a-8b2a-355aea3b6c44' OR sales.time >= '2022-01-25 13:52:34' OR sales.time <= '2022-02-27 12:32:46'
 # QueryResultInventory is a named tuple used to ease the parsing of
 # list-of-lists data format returned by cursor.fetchall into dictionaries
 # ready to be returned as JSON.
@@ -252,7 +256,7 @@ def get_inventory(store=None, product=None):
             product_clause = product_clause.replace("WHERE", "AND")
         parameters.append(product)
     query = """SELECT products.name,
-               SUM(inventory.quantity) + SUM(sold_products.quantity),
+               SUM(inventory.quantity) - SUM(sold_products.quantity),
                stores.name
                FROM inventory
                JOIN products ON products.id = inventory.product
