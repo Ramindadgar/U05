@@ -1,13 +1,15 @@
-import uuid
 from collections import namedtuple
-from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException, Query, status
+
+from typing import List, Optional
+
 
 import psycopg2
 import psycopg2.extras
 import psycopg
 
+import uuid
 # from src import api
 
 """
@@ -22,7 +24,7 @@ If you are going to run tests with pytest against the docker-compose databse you
 2. In src/main.py comment the public db connection and make sure the local db conneciton is uncomment.
 3. start docker-compose up -d ==> docker-compose exec web pytest . -v
 
-When running tests against the public database 
+When running tests against the public database
 1. comment away the local databse-connection below and
 2. In tests ==> test_main.py make sure the app-import looks like this: "from src.main import app"
 """
@@ -189,10 +191,10 @@ def get_income(store: Optional[List[str]] = Query(None),
         parameters.append(to_)
     query = """SELECT stores.name, products.name, prices.price,
                sold_products.quantity, sales.time, discounts.discount_percent
-               FROM sold_products 
-               JOIN products on sold_products.product = products.id 
-               JOIN sales ON sold_products.sale = sales.id 
-               JOIN stores ON sales.store = stores.id 
+               FROM sold_products
+               JOIN products on sold_products.product = products.id
+               JOIN sales ON sold_products.sale = sales.id
+               JOIN stores ON sales.store = stores.id
                JOIN prices ON products.id = prices.product
                LEFT JOIN discounts ON products.id = discounts.product
                {stores} {products} {from_} {to}
