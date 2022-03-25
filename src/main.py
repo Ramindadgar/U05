@@ -96,7 +96,7 @@ async def get_city(zip=None):
 async def sales():
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
-            "SELECT name, to_char(sales.time::date, 'yyyymmddThh:mm:ss') as time, sales.id FROM stores JOIN sales on store = stores.id")
+            "SELECT name, to_char(sales.time, 'YYYYMMDDThh24:MI:SS') as time, sales.id FROM stores JOIN sales on store = stores.id")
         sales = cur.fetchall()
         sales = [{"store": s["name"], "timestamp": s['time'],
                   "sale_id": s['id']} for s in sales]
@@ -122,7 +122,7 @@ async def get_sale(sale_id: str):
         if sale_id in sale_UUID:
             # query = """SELECT stores.name, to_char(sales.time::date, 'yyyymmddThh:mm:ss'), sales.id FROM sales JOIN stores on stores.id = sales.store WHERE sales.id = {sale_id};"""
             cur.execute(
-                "SELECT stores.name, to_char(sales.time::date, 'yyyymmddThh:mm:ss') as time, sales.id FROM sales JOIN stores on stores.id = sales.store WHERE sales.id = (%s)", (sale_id,))
+                "SELECT stores.name, to_char(sales.time, 'YYYYMMDDThh24:MI:SS') as time, sales.id FROM sales JOIN stores on stores.id = sales.store WHERE sales.id = (%s)", (sale_id,))
             sales = cur.fetchone()
             cur.execute("SELECT sold_products.quantity, products.name FROM sold_products JOIN products ON products.id = sold_products.product WHERE sold_products.sale = (%s)", (sale_id,))
             product = cur.fetchall()
@@ -205,7 +205,7 @@ def get_income(store: Optional[List[str]] = Query(None),
             to_clause = to_clause.replace("WHERE", "AND")
         parameters.append(to_)
     query = """SELECT stores.name, products.name, prices.price,
-               sold_products.quantity, to_char(sales.time::date, 'yyyymmddThh:mm:ss'), discounts.discount_percent
+               sold_products.quantity, to_char(sales.time, 'YYYYMMDDThh24:MI:SS'), discounts.discount_percent
                FROM sold_products
                JOIN products on sold_products.product = products.id
                JOIN sales ON sold_products.sale = sales.id
