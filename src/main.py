@@ -7,7 +7,6 @@ from typing import List, Optional
 
 import psycopg2
 import psycopg2.extras
-import psycopg
 
 import uuid
 # from src import api
@@ -97,12 +96,15 @@ async def get_city(zip=None):
 async def sales():
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
-            "SELECT name, sales.time, sales.id FROM stores JOIN sales on store = stores.id")
+            "SELECT name, to_char(sales.time::date, 'yyyymmddThh:mm:ss') as time, sales.id FROM stores JOIN sales on store = stores.id")
         sales = cur.fetchall()
         sales = [{"store": s["name"], "timestamp": s['time'],
                   "sale_id": s['id']} for s in sales]
 
         return {"data": sales}
+
+# github actions
+# Kolla med aws om cert libgen (https://libgen.is)
 
 
 @app.get("/sales/{sale_id}")
@@ -118,8 +120,9 @@ async def get_sale(sale_id: str):
         id = cur.fetchall()
         sale_UUID = [item for t in id for item in t]
         if sale_id in sale_UUID:
+            # query = """SELECT stores.name, to_char(sales.time::date, 'yyyymmddThh:mm:ss'), sales.id FROM sales JOIN stores on stores.id = sales.store WHERE sales.id = {sale_id};"""
             cur.execute(
-                "SELECT stores.name, sales.time, sales.id FROM sales JOIN stores on stores.id = sales.store WHERE sales.id = (%s)", (sale_id,))
+                "SELECT stores.name, to_char(sales.time::date, 'yyyymmddThh:mm:ss') as time, sales.id FROM sales JOIN stores on stores.id = sales.store WHERE sales.id = (%s)", (sale_id,))
             sales = cur.fetchone()
             cur.execute("SELECT sold_products.quantity, products.name FROM sold_products JOIN products ON products.id = sold_products.product WHERE sold_products.sale = (%s)", (sale_id,))
             product = cur.fetchall()
@@ -202,24 +205,28 @@ def get_income(store: Optional[List[str]] = Query(None),
             to_clause = to_clause.replace("WHERE", "AND")
         parameters.append(to_)
     query = """SELECT stores.name, products.name, prices.price,
-               sold_products.quantity, sales.time, discounts.discount_percent
+               sold_products.quantity, to_char(sales.time::date, 'yyyymmddThh:mm:ss'), discounts.discount_percent
                FROM sold_products
                JOIN products on sold_products.product = products.id
                JOIN sales ON sold_products.sale = sales.id
                JOIN stores ON sales.store = stores.id
                JOIN prices ON products.id = prices.product
                LEFT JOIN discounts ON products.id = discounts.product
-               {stores} {products} {from_} {to}
+               {stores} {products} {from_} {to_}
                ORDER BY sales.time;"""
     query = query.format(stores=stores_clause, products=products_clause,
-                         from_=from_clause, to=to_clause)
+                         from_=from_clause, to_=to_clause)
     try:
         with conn.cursor() as cur:
             cur.execute(query, parameters)
             result = cur.fetchall()
-    except psycopg.errors.Error:
+            print("Hej det här kommer från try-blocket efter fetchall")
+    except psycopg2.errors.Error:
+        print("Hej här är ett meddelande från error")
         conn.rollback()
         raise HTTPException(status_code=422, detail="Invalid datetime format!")
+    # except psycopg2.errors.DatetimeFieldOverflow:
+    #     print("hej från datetime.field-OVERFLOW!!!!!!!!!!!")
     entries = [QueryResultIncome(*r)._asdict() for r in result]
     print(entries)
     return {"data": entries}
