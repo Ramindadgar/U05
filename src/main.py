@@ -19,7 +19,7 @@ One in a docker-compose container and one public "physical" database.
 
 If you are going to run tests with pytest against the docker-compose databse you'll have to do this:
 
-1. in tests ==> test_main.py change the import "from src.main import app" to "from ..src.main import app"
+1. in tests ==> test_main.py adn test_api.py change the import "from src.main import app" to "from ..src.main import app"
 2. In src/main.py comment the public db connection and make sure the local db conneciton is uncomment.
 3. start docker-compose up -d ==> docker-compose exec web pytest . -v
 
@@ -215,7 +215,7 @@ def get_income(store: Optional[List[str]] = Query(None),
                {stores} {products} {from_} {to_}
                ORDER BY sales.time;"""
     query = query.format(stores=stores_clause, products=products_clause,
-                         from_=from_clause, to_=to_clause)
+                         from_=from_clause, to_=to_clause)  # BUGGFIX CHANGE "to" to "to_"
     try:
         with conn.cursor() as cur:
             cur.execute(query, parameters)
@@ -225,8 +225,6 @@ def get_income(store: Optional[List[str]] = Query(None),
         print("Hej här är ett meddelande från error")
         conn.rollback()
         raise HTTPException(status_code=422, detail="Invalid datetime format!")
-    # except psycopg2.errors.DatetimeFieldOverflow:
-    #     print("hej från datetime.field-OVERFLOW!!!!!!!!!!!")
     entries = [QueryResultIncome(*r)._asdict() for r in result]
     print(entries)
     return {"data": entries}
@@ -264,7 +262,7 @@ def get_inventory(store=None, product=None):
             uuid.UUID(store)
         except ValueError as err:
             raise HTTPException(status_code=422,
-                                detail="Invalid UUID for store!") from err
+                                detail="Invalid UUID for store!") from err  # BUGGFIX change product to store
         store_clause = "WHERE stores.id = %s"
         parameters.append(store)
     if product:
@@ -272,11 +270,13 @@ def get_inventory(store=None, product=None):
             uuid.UUID(product)
         except ValueError as err:
             raise HTTPException(status_code=422,
-                                detail="Invalid UUID for product!") from err
+                                detail="Invalid UUID for product!") from err  # BUGGFIX change store to product
         product_clause = "WHERE products.id = %s"
-        if parameters:
-            product_clause = product_clause.replace("WHERE", "AND")
+        if parameters:  # BUGGFIX change "if not parameter" to "if parameter"
+            product_clause = product_clause.replace(
+                "WHERE", "AND")  # BUGGFIX change END TO AND
         parameters.append(product)
+        # BUGGFIX, changes operater "+" to "-" in sql-query
     query = """SELECT products.name,
                SUM(inventory.quantity) - SUM(sold_products.quantity),
                stores.name
