@@ -1,15 +1,11 @@
+import uuid
 from collections import namedtuple
+from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException, Query, status
 
-from typing import List, Optional
-
-# import psycopg
-
 import psycopg2
 import psycopg2.extras
-
-import uuid
 # from src import api
 
 """
