@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException, Query, status
 
 from typing import List, Optional
 
+# import psycopg
 
 import psycopg2
 import psycopg2.extras
@@ -27,7 +28,6 @@ When running tests against the public database
 1. comment away the local databse-connection below and
 2. In tests ==> test_main.py make sure the app-import looks like this: "from src.main import app"
 """
-
 
 app = FastAPI()
 
@@ -221,7 +221,7 @@ def get_income(store: Optional[List[str]] = Query(None),
             cur.execute(query, parameters)
             result = cur.fetchall()
             print("Hej det här kommer från try-blocket efter fetchall")
-    except psycopg2.errors.Error:
+    except psycopg2.Error:
         print("Hej här är ett meddelande från error")
         conn.rollback()
         raise HTTPException(status_code=422, detail="Invalid datetime format!")
